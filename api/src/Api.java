@@ -15,8 +15,13 @@ public class Api {
     public float longitude;
     public  int time;
 
-    public Api() throws MalformedURLException {
-        this.url= new URL("http://api.open-notify.org/iss-now.json");
+    public Api() {
+        try {
+            this.url= new URL("http://api.open-notify.org/iss-now.json");
+        } catch (MalformedURLException e) {
+            System.out.println("Zły url");
+        }
+
     }
 
 
