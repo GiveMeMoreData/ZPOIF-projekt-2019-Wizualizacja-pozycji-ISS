@@ -49,8 +49,8 @@
     <script type="text/javascript">
       var jsConnector = {
         update: function(longtitude, latitude) {
-          var x = projection([parseInt(longtitude, 10), parseInt(latitude, 10)])[0]
-          var y = projection([parseInt(longtitude, 10), parseInt(latitude, 10)])[1]
+          var x = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[0]
+          var y = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[1]
           svg.select(".iss")
             .attr('cx', x)
             .attr('cy', y)
