@@ -1,15 +1,23 @@
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.property.ObjectProperty;
-import javafx.collections.FXCollections;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
@@ -20,22 +28,20 @@ import netscape.javascript.JSObject;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+
 
 public class Main extends Application {
 
     private JSObject javascriptConnector;
-    Stage primaryStage;
+
+    //TODO Tu będą wszystkie wartości ustawień, domyślnie zczytywane z pliku przy uruchomieniu aplikacji
     private int windowHeight = 720;
     private int windowWidth = 1280;
 
-    public void start(Stage unUsedStage) {
+    Stage stage;
+    Scene menu,loading,map,issLiveView,settings;
 
-        primaryStage = new Stage();
-        primaryStage.setWidth(windowWidth);
-        primaryStage.setHeight(windowHeight);
+    public void start(Stage unusedStage) {
         // 5 słów wyjaśnienia
         // Struktura aplikacji
         // Layout <- to co pokażemy użytkownikowi, na nim umieszczamy teskt, przyciski, WebView itd.
@@ -45,10 +51,118 @@ public class Main extends Application {
         //           Jej konstruktor wymaga layoutu i zdefinowanej wysokości i szerokości
         // Stage  <- fundament aplikacji, mu będziemy dawać różne sceny do wyświetlenia
 
-        // LAYOUTY
+        stage = new Stage();
+        stage.setWidth(windowWidth);
+        stage.setHeight(windowHeight);
+
+        loading = new Scene(getLoadingLayout());
+        menu = new Scene(getMenuLayout());
+        menu.getStylesheets().add("style.css"); //TODO Dodany tylko do menu, dobrze by było mieć globalny
+        map = new Scene(getMapLayout());
+        issLiveView = new Scene(getIssLiveViewLayout());
+        settings = new Scene(getSettingsLayout());
+
+
+        PauseTransition timer = new PauseTransition(Duration.millis(1500));
+        timer.setOnFinished(actionEvent -> stage.setScene(menu));
+
+
+        // Tu następuje pojawienie się aplikacji
+        stage.setScene(loading);
+        stage.show();
+        timer.play();
+
+
+
+    }
+
+
+    private Parent getSettingsLayout() {
+        // LAYOUT ustawien
+
+        HBox layoutSettings = new HBox(100);
+
+        VBox settingsViews = new VBox(40);
+        settingsViews.setAlignment(Pos.CENTER);
+
+        HBox settingsGeneralControls = new HBox(80);
+        VBox settingsGeneralLabels = new VBox(40);
+        settingsGeneralLabels.setAlignment(Pos.CENTER);
+        VBox settingsGeneralValues = new VBox(40);
+        settingsGeneralValues.setAlignment(Pos.CENTER);
+
+
+        // Ustawienie Boxów
+        layoutSettings.getChildren().addAll(settingsViews,settingsGeneralControls);
+        settingsGeneralControls.getChildren().addAll(settingsGeneralLabels,settingsGeneralValues);
+
+
+
+        Button btnSettingsGeneral = new Button("Ogólne");
+        Button btnSettings2DMap = new Button("Mapa 2D");
+        Button btnAcceptChanges = new Button("Akceptuj");
+        Button btnBack = new Button("Wróć");
+
+
+        ComboBox<String> resolutionComboBox = new ComboBox<>();
+        resolutionComboBox.getItems().addAll(
+                "1920x1080",
+                "1280x720",
+                "720x576",
+                "720x480"
+        );
+        resolutionComboBox.getSelectionModel().selectFirst();
+
+        ComboBox<String> themeComboBox = new ComboBox<>();
+        themeComboBox.getItems().addAll(
+                "Light",
+                "Dark"
+        );
+        themeComboBox.getSelectionModel().selectFirst();
+        Button btnViewSourceCode = new Button("Source Code");
+
+
+        btnAcceptChanges.setOnAction(actionEvent -> {
+            String[] values = resolutionComboBox.getValue().split("x");
+            setStageSize(Integer.parseInt(values[0]),Integer.parseInt(values[1]));
+
+        });
+
+        settingsGeneralLabels.getChildren().addAll(new Label("Rozdzielczość"),new Label("Fullscreen"), new Label("Fullscreen\nborderless"),new Label("Theme"), new Label("View Source\nCode"));
+        settingsGeneralValues.getChildren().addAll(resolutionComboBox,new CheckBox(),new CheckBox(),themeComboBox,btnViewSourceCode);
+
+        settingsViews.getChildren().addAll(btnSettingsGeneral,btnSettings2DMap,btnBack,btnAcceptChanges);
+
+
+        btnBack.setOnAction(actionEvent -> stage.setScene(menu));
+
+        return layoutSettings;
+
+    }
+
+    private Parent getIssLiveViewLayout() {
+        // LAYOUT ISS Livestream
+
+
+
+        VBox layoutIssLive = new VBox();
+        WebView issWebView = new WebView();
+        // Ten link powinien być ok ale film nie chce się ładować, może chodzić o silnik przeglądarki, którego używa javafx
+        //https://www.youtube.com/embed/kL090M6qtXQ?controls=0&autoplay=1&fs=0&mute=1&iv_load_policy=3&rel=0&showinfo=0
+        issWebView.getEngine().load("https://www.youtube.com/embed/kL090M6qtXQ?controls=0&autoplay=1&fs=0&mute=1&iv_load_policy=3&rel=0&showinfo=0");
+        issWebView.setPrefSize(windowWidth,windowHeight);
+        Button btnBack = new Button("Wróć");
+        btnBack.setOnAction(actionEvent -> stage.setScene(menu));
+
+        layoutIssLive.getChildren().addAll(issWebView,btnBack);
+
+
+
+        return layoutIssLive;
+    }
+
+    private Parent getMenuLayout(){
         // Menu
-
-
         VBox layoutMenu = new VBox(80);
         layoutMenu.setAlignment(Pos.CENTER);
 
@@ -59,11 +173,27 @@ public class Main extends Application {
         Button btnExit = new Button("Zamknij");
         layoutMenu.getChildren().addAll(btnMap, btnIssLive, btnSettings, btnExit);
 
-        // Settings
-        //TODO dodanie zmiany wielkości okna i ewentualnie częstotliowści pobierania danych
+        // Przejście do mapy (webview)
+        btnMap.setOnAction(actionEvent -> setScene(map));
 
+        btnIssLive.setOnAction(actionEvent -> setScene(issLiveView));
 
+        // Przejście do ustawień
+        btnSettings.setOnAction(actionEvent -> {
+            stage.setScene(settings);
+            settings.getStylesheets().add("styleSettings.css");
+        });
 
+        // Zamknięcie aplikacji
+        btnExit.setOnAction(actionEvent -> {
+            Platform.exit();
+            System.exit(0);
+        });
+
+        return layoutMenu;
+    }
+
+    private Parent getMapLayout() {
         // Map
         VBox layoutMap = new VBox();
         WebView webView = new WebView();
@@ -98,117 +228,31 @@ public class Main extends Application {
                 sv.start();
             }
         });
-
-        // LAYOUT ISS Livestream
-
-        VBox layoutIssLive = new VBox();
-        WebView issWebView = new WebView();
-        final WebEngine issWebEngine = issWebView.getEngine();
-        // Ten link powinien być ok ale film nie chce się ładować, może chodzić o silnik przeglądarki, którego używa javafx
-        //https://www.youtube.com/embed/kL090M6qtXQ?controls=0&autoplay=1&fs=0&mute=1&iv_load_policy=3&rel=0&showinfo=0
-        issWebEngine.load("https://www.youtube.com/embed/kL090M6qtXQ?controls=0&autoplay=1&fs=0&mute=1&iv_load_policy=3&rel=0&showinfo=0");
-        issWebView.setPrefSize(windowWidth,windowHeight);
-        layoutIssLive.getChildren().addAll(issWebView);
-
-
-        // LAYOUT ustawien
-
-        HBox layoutSettings = new HBox(100);
-
-        VBox settingsViews = new VBox(40);
-        settingsViews.setAlignment(Pos.CENTER);
-
-        HBox settingsControls = new HBox(80);
-        VBox settingsLabels = new VBox(40);
-        settingsLabels.setAlignment(Pos.CENTER);
-        VBox settingsValues = new VBox(40);
-        settingsValues.setAlignment(Pos.CENTER);
-
-        // Ustawienie Boxów
-        layoutSettings.getChildren().addAll(settingsViews,settingsControls);
-        settingsControls.getChildren().addAll(settingsLabels,settingsValues);
-
-
-
-        Button btnSettingsGeneral = new Button("Ogólne");
-        Button btnSettings2DMap = new Button("Mapa 2D");
-        Button btnAcceptChanges = new Button("Akceptuj");
-        Button btnBack = new Button("Wróć");
-
-
-        ComboBox<String> resolutionComboBox = new ComboBox<>();
-        resolutionComboBox.getItems().addAll(
-                "1920x1080",
-                "1280x720",
-                "720x576",
-                "720x480"
-        );
-        resolutionComboBox.getSelectionModel().selectFirst();
-
-        ComboBox<String> themeComboBox = new ComboBox<>();
-        themeComboBox.getItems().addAll(
-                "Light",
-                "Dark"
-        );
-        themeComboBox.getSelectionModel().selectFirst();
-        Button btnViewSourceCode = new Button("Source Code");
-
-
-        btnAcceptChanges.setOnAction(actionEvent -> {
-            String[] values = resolutionComboBox.getValue().split("x");
-            setStageSize(Integer.parseInt(values[0]),Integer.parseInt(values[1]));
-
-        });
-
-        settingsLabels.getChildren().addAll(new Label("Rozdzielczość"),new Label("Fullscreen"), new Label("Fullscreen\nborderless"),new Label("Theme"), new Label("View Source\nCode"));
-        settingsValues.getChildren().addAll(resolutionComboBox,new CheckBox(),new CheckBox(),themeComboBox,btnViewSourceCode);
-
-        settingsViews.getChildren().addAll(btnSettingsGeneral,btnSettings2DMap,btnBack,btnAcceptChanges);
-
-        // Wszystkie sceny aplikacji
-
-
-        Scene menu = new Scene(layoutMenu);
-        Scene map = new Scene(layoutMap);
-        Scene settings = new Scene(layoutSettings);
-        Scene issLive = new Scene(layoutIssLive);
-
-        // BUTTON HANDLING
-        // Powrót do menu
-        //TODO może da się to zrobić jednym przyciskiem?
-        btnBackMap.setOnAction(actionEvent -> primaryStage.setScene(menu));
-        btnBack.setOnAction(actionEvent -> primaryStage.setScene(menu));
-
-        // Przejście do mapy (webview)
-        btnMap.setOnAction(actionEvent -> setScene(map));
-
-        btnIssLive.setOnAction(actionEvent -> setScene(issLive));
-
-        // Przejście do ustawień
-        btnSettings.setOnAction(actionEvent -> {
-            primaryStage.setScene(settings);
-            settings.getStylesheets().add("styleSettings.css");
-        });
-
-        // Zamknięcie aplikacji
-        btnExit.setOnAction(actionEvent -> {
-            Platform.exit();
-            System.exit(0);
-        });
-
-
-
-        primaryStage.setScene(menu);
-        menu.getStylesheets().add("style.css"); //TODO Dodany tylko do menu, mógłby być globalny
-        primaryStage.show();
-
         URL url = this.getClass().getResource("webview.html");
         webEngine.load(url.toString());
 
+        btnBackMap.setOnAction(actionEvent -> stage.setScene(menu));
+
+        return layoutMap;
+
+
+    }
+
+    private Parent getLoadingLayout() {
+        //Loading screen layout
+        Image loadingImage = new Image("face.png",windowWidth/2,windowHeight/2,true,true);
+        ImageView imageView = new ImageView(loadingImage);
+        StackPane layoutLoadingPage = new StackPane();
+        layoutLoadingPage.setAlignment(Pos.CENTER);
+        layoutLoadingPage.getChildren().add(imageView);
+
+        layoutLoadingPage.setOnMouseClicked(mouseEvent -> stage.setScene(menu));
+        return layoutLoadingPage;
     }
 
     private void setScene(Scene scene){
-        primaryStage.setScene(scene);
+        //TODO Może się przydać przy bardziej rozbudowanych przejściach pomiędzy scenami
+        stage.setScene(scene);
     }
 
     private void setStageSize(int width, int height){
@@ -217,12 +261,11 @@ public class Main extends Application {
         Rectangle2D screen = Screen.getPrimary().getBounds();
         double screenWidth = screen.getWidth();
         double screenHeight = screen.getHeight();
-        primaryStage.setHeight(windowHeight);
-        primaryStage.setWidth(windowWidth);
-        primaryStage.setY((screenHeight-windowHeight)/2);
-        primaryStage.setX((screenWidth-windowWidth)/2);
+        stage.setHeight(windowHeight);
+        stage.setWidth(windowWidth);
+        stage.setY((screenHeight-windowHeight)/2);
+        stage.setX((screenWidth-windowWidth)/2);
     }
-
 
 
 }
