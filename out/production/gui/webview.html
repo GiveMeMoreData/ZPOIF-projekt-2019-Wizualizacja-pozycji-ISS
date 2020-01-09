@@ -7,110 +7,363 @@
 
 <style>
   body {
-    background: #fcfcfa;
-    height: 500px;
-    position: relative;
-    width: 960px;
+    background: #1A233B;
+    font-family: menlo, "source-code-pro", 'andale mono','courier new', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  h1 {
+    order: 1;
+    /* padding: 60px 0 0; */
+    /* color: #239C9C; */
+    color: #fff
   }
 
-  .stroke {
-    fill: none;
-    stroke: #000;
-    stroke-width: 3px;
-  }
-
-  .fill {
-    fill: #fff;
-  }
-
-  .graticule {
-    fill: none;
-    stroke: #777;
-    stroke-width: .5px;
-    stroke-opacity: .5;
-  }
-
-  .land {
-    fill: #222;
-  }
-
-  .boundary {
-    fill: none;
-    stroke: #fff;
-    stroke-width: .5px;
+  .container {
+    order: 2;
   }
 </style>
 
 <body>
   <main>
-    <script src="https://d3js.org/d3.v4.js"></script>
-    <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
-    <script src="https://d3js.org/topojson.v2.min.js"></script>
-    <script type="text/javascript">
-      var jsConnector = {
-        update: function(longtitude, latitude) {
-          var x = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[0]
-          var y = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[1]
-          svg.select(".iss")
-            .attr('cx', x)
-            .attr('cy', y)
+    <h1>ISS location map</h1>
+    <div class="container">
+      <script src="https://d3js.org/d3.v4.js"></script>
+      <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+      <script src="https://d3js.org/topojson.v2.min.js"></script>
+      <script src="https://rawgit.com/mourner/suncalc/master/suncalc.js"></script>
+      <script type="text/javascript">
+        var jsConnector = {
+          updateISS: function(longtitude, latitude) {
+            var x = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[0]
+            var y = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[1]
+            svg.select("#iss")
+              .attr('cx', x)
+              .attr('cy', y)
+          }
+        };
+
+        function getJsConnector() {
+          return jsConnector;
+        };
+
+        d3.selection.prototype.moveToFront = function() {
+          return this.each(function() {
+            this.parentNode.appendChild(this);
+          });
+        };
+
+        function colorLuminance(hex, lum = 0) {
+          c = null
+          i = 0
+          rgb = '#'
+          hex = String(hex).replace(/[^0-9a-f]/gi, '')
+          if (hex.length < 6) {
+            hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2]
+          }
+          while (i < 3) {
+            c = parseInt(hex.substr(i * 2, 2), 16)
+            c = Math.round(Math.min(Math.max(0, c + c * lum), 255)).toString(16)
+            rgb += ('00' + c).substr(c.length)
+            i++
+          }
+          return rgb
         }
-      };
 
-      function getJsConnector() {
-        return jsConnector;
-      };
+        function isDaylight(obj) {
+          return obj.altitude > 0
+        }
 
-      var width = 970,
-        height = 500;
-      var projection = d3.geoNaturalEarth().translate([480, 255])
-      var path = d3.geoPath(projection);
-      var graticule = d3.geoGraticule();
-      var svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-      var defs = svg.append('defs');
-      defs.append("path")
-        .datum({
-          type: "Sphere"
-        })
-        .attr("id", "sphere")
-        .attr("d", path);
+        function isNorthSun() {
+          return isDaylight(SunCalc.getPosition(new Date(), 90, 0));
+        }
+
+        function getSunriseSunsetLatitude(lng, northSun) {
+          if (northSun) {
+            startLat = -90
+            endLat = 90
+            delta = 1
+          } else {
+            startLat = 90
+            endLat = -90
+            delta = -1
+          }
+
+          lat = startLat
+          while (lat != endLat) {
+            if (isDaylight(SunCalc.getPosition(new Date(), lat, lng)))
+              return lat
+            lat += delta
+          }
+          return lat
+        }
+
+        function getAllSunPositionsAtLng(lng) {
+          var lat = -90
+          var peak = 0
+          var result = []
+          var alt = 0
+          while (lat < 90) {
+            alt = SunCalc.getPosition(new Date(), lat, lng).altitude
+            if (alt > peak) {
+              peak = alt
+              result = [peak, lat]
+            }
+            lat += 10
+          }
+          return result
+        }
+
+        function getSunPosition() {
+          var lng = -180
+          var coords = []
+          var peak = 0
+          var alt = 0
+          var result = 0
+          while (lng < 180) {
+            alt = getAllSunPositionsAtLng(lng)
+            if (alt[0] > peak) {
+              peak = alt[0]
+              result = [alt[1], lng]
+            }
+            lng += 1
+          }
+          return coordToXY(result)
+        }
+
+        function getAllSunriseSunsetCoords(northSun) {
+          lng = -180
+          coords = []
+          while (lng < 180) {
+            coords.push([getSunriseSunsetLatitude(lng, northSun), lng]);
+            lng += 10
+          }
+          coords.push([getSunriseSunsetLatitude(180, northSun), 180])
+
+          return coords
+        }
+
+        function coordToXY(coord) {
+          x = (coord[1] + 180) * (width / 360)
+          y = height - (coord[0] + 90) * (height / 180)
+          return {
+            x: x,
+            y: y
+          }
+        }
+
+        var lineFunction = d3.line()
+          .x(function(d) {
+            return d.x;
+          })
+          .y(function(d) {
+            return d.y;
+          })
+
+        function getPath(northSun) {
+          path = []
+          coords = getAllSunriseSunsetCoords(northSun)
+          coords.forEach((val) => {
+            path.push(coordToXY(val))
+          })
+
+          return path
+        }
+
+        function getPathString(northSun) {
+          if (!northSun) {
+            yStart = 0
+          } else {
+            yStart = height
+          }
+          pathStr = "M 0 " + yStart
+          path = getPath(northSun)
+          pathStr += lineFunction(path)
+
+          pathStr += " L " + width + ", " + yStart
+          pathStr += " L 0, " + yStart
+          return pathStr
+        }
+
+        function shuffleElements() {
+          svg.selectAll('#land').insertBefore('#nightPath')
+          svg.selselectAll('#sun').insertBefore('#land')
+        }
+
+        var width = 1100
+        var height = width / 2
+        var bgColorLeft = '#42448A'
+        var bgColorRight = '#376281'
+        var sunOpacity = 0.11
+        var shadowOpacity = 0.2
+
+        var svg = d3.select("body").append("svg").attr("id", "mapa")
+        var defs = svg.append('defs');
+
+        defs.append('linearGradient')
+          .attr('id', 'gradient')
+          .attr('x1', '0%')
+          .attr('y1', '0%')
+          .attr('x2', '100%')
+          .attr('y2', '0%')
+
+        defs.select('#gradient')
+          .append('stop')
+          .attr('offset', '0%')
+          .attr('stop-color', bgColorLeft)
+
+        defs.select('#gradient')
+          .append('stop')
+          .attr('offset', '100%')
+          .attr('stop-color', bgColorRight)
+
+        defs.append('linearGradient')
+          .attr('id', 'landGradient')
+          .attr('x1', '0%')
+          .attr('y1', '0%')
+          .attr('x2', '100%')
+          .attr('y2', '0%')
+
+        defs.select('#landGradient')
+          .append('stop')
+          .attr('offset', '0%')
+          .attr('stop-color', colorLuminance(bgColorLeft, -0.2))
+
+        defs.select('#landGradient')
+          .append('stop')
+          .attr('offset', '100%')
+          .attr('stop-color', colorLuminance(bgColorRight, -0.2))
+
+        defs.append('radialGradient')
+          .attr('id', 'radialGradient')
+
+        defs.select('#radialGradient')
+          .append('stop')
+          .attr('offset', '0%')
+          .attr('stop-opacity', sunOpacity)
+          .attr('stop-color', "rgb(255, 255, 255)")
+
+        defs.select('#radialGradient')
+          .append('stop')
+          .attr('offset', '100%')
+          .attr('stop-opacity', 0)
+          .attr('stop-color', 'rgb(255, 255, 255)')
 
         defs.append("filter")
-        .attr("id", "filter")
-        .attr('x', '0%')
-        .attr('y', '0%')
-        .attr("height", '100%')
-        .attr("width", '100%')
-        .append('feImage')
-        .attr("xlink:href", "iss.png")
-      svg.append("use")
-        .attr("class", "stroke")
-        .attr("xlink:href", "#sphere");
-      svg.append("use")
-        .attr("class", "fill")
-        .attr("xlink:href", "#sphere");
-      svg.append("path")
-        .datum(graticule)
-        .attr("class", "graticule")
-        .attr("d", path);
-      d3.json("map.json", function(error, world) {
-        if (error) throw error;
-        svg.insert("path", ".graticule")
-          .datum(topojson.feature(world, world.objects.land))
-          .attr("class", "land")
-          .attr("d", path);
-      });
+          .attr("id", "filter")
+          .attr('x', '0%')
+          .attr('y', '0%')
+          .attr("height", '100%')
+          .attr("width", '100%')
+          .append('feImage')
+          .attr("xlink:href", "iss.png")
 
-      svg.append("circle")
-        .attr('class', 'iss')
-        .attr('cx', 20)
-        .attr('cy', 20)
-        .attr('r', 15 )
-        .style("fill", "#ffcc00")
-        .attr('filter', 'url(#filter)')
-    </script>
+        svg.attr('width', width)
+          .attr('height', height)
+          .attr('viewBox', "0 0 " + width + " " + height)
+          .append('rect')
+          .attr('width', width)
+          .attr('height', height)
+          .attr('fill', "url(#gradient)")
+
+        xy = getSunPosition()
+        svg.append('circle')
+          .attr('cx', xy.x)
+          .attr('cy', xy.y)
+          .attr('id', 'sun')
+          .attr('r', 150)
+          .attr('opacity', 1)
+          .style("fill", "url(#radialGradient)")
+
+        d3.json("map.json", function(error, world) {
+          if (error) throw error;
+          projection = d3.geoEquirectangular().scale(width / 6.25).translate([width / 2, height / 2]).precision(0.1)
+          worldPath = d3.geoPath(projection)
+          svg.append("path")
+            .attr('id', 'land')
+            .attr('fill', 'url(#landGradient)')
+            .datum(topojson.feature(world, world.objects.land))
+            .attr('d', worldPath)
+          svg.selectAll("#sun").moveToFront()
+          svg.selectAll("#nightPath").moveToFront()
+          svg.selectAll("#iss").moveToFront()
+        })
+
+        path = getPathString(isNorthSun())
+        svg.append('path')
+          .attr('id', 'nightPath')
+          .attr('fill', "rgb(0,0,0)")
+          .attr('fill-opacity', shadowOpacity)
+          .attr('d', path)
+
+        svg.append("circle")
+          .attr('id', 'iss')
+          .attr('cx', 20)
+          .attr('cy', 20)
+          .attr('r', 15)
+          .style("fill", "#ffcc00")
+          .attr('filter', 'url(#filter)')
+
+
+        // var width = 970
+        // var height = 500
+        // var projection = d3.geoEquirectangular().center([0, 0])
+        // var path = d3.geoPath(projection);
+        // var graticule = d3.geoGraticule().extentMajor();
+        // var svg = d3.select("body").append("svg")
+        //   .attr("width", width)
+        //   .attr("height", height)
+        // var defs = svg.append('defs');
+        // // defs.append("path")
+        // //   .datum({
+        // //     type: "Sphere"
+        // //   })
+        // //   .attr("id", "sphere")
+        // //   .attr("d", path);
+        // defs.append("filter")
+        //   .attr("id", "filter")
+        //   .attr('x', '0%')
+        //   .attr('y', '0%')
+        //   .attr("height", '100%')
+        //   .attr("width", '100%')
+        //   .append('feImage')
+        //   .attr("xlink:href", "iss.png")
+        // // svg.append("use")
+        // //   .attr("class", "stroke")
+        // //   .attr("xlink:href", "#sphere");
+        // // svg.append("use")
+        // //   .attr("class", "fill")
+        // //   .attr("xlink:href", "#sphere");
+        //
+        // d3.json("map.json", function(error, world) {
+        //   if (error) throw error;
+        //   svg.append("path")
+        //     .datum(topojson.feature(world, world.objects.land))
+        //     .attr("class", "land")
+        //     .attr("d", path)
+        //     .style("fill", "#339966")
+        //   svg.append("path")
+        //     .datum(graticule)
+        //     .attr("class", "graticule")
+        //     .attr("d", path);
+        //   svg.append("circle")
+        //     .attr('class', 'iss')
+        //     .attr('cx', 20)
+        //     .attr('cy', 20)
+        //     .attr('r', 15)
+        //     .style("fill", "#ffcc00")
+        //     .attr('filter', 'url(#filter)')
+        //   path2 = getPathString(isNorthSun())
+        //   svg.append('path')
+        //     .attr('class', 'nightPath')
+        //     .style('fill', "rgb(0,0,0)")
+        //     .style('opacity', 0.35)
+        //     .attr('d', path2)
+        // });
+      </script>
+    </div>
   </main>
 </body>
 

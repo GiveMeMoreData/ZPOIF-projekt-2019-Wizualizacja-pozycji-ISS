@@ -218,7 +218,7 @@ public class Main extends Application {
                                 }
                                 String longtitude = Float.toString(api.longitude);
                                 String latitude = Float.toString(api.latitude);
-                                Platform.runLater(() -> javascriptConnector.call("update", longtitude, latitude));
+                                Platform.runLater(() -> javascriptConnector.call("updateISS", longtitude, latitude));
                                 return null;
                             }
                         };
