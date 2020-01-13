@@ -12,13 +12,20 @@ public class Api {
     public float latitude;
     public float longitude;
     public int time;
+    public float altitude;
+    public float velocity;
+    HttpClient client;
+    HttpRequest request;
+
 
     public Api() {
         try {
-            this.uri= new URI("http://api.open-notify.org/iss-now.json");
+            this.uri= new URI("https://api.wheretheiss.at/v1/satellites/25544");
         } catch (URISyntaxException e) {
-            System.out.println("Wrong URL");
+            System.out.println("Could not connect to API");
         }
+        client = HttpClient.newHttpClient();
+
     }
 
     public void fetch() throws InterruptedException, IOException {
@@ -27,19 +34,17 @@ public class Api {
     }
 
     private void sendNewRequest() throws InterruptedException, IOException {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(this.uri)
-                .GET()
-                .build();
+        request = HttpRequest.newBuilder().uri(this.uri)
+                .GET().build();
         this.response = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
     }
 
     private void updateValues(){
         JSONObject json_response = new JSONObject(this.response);
-        JSONObject position = (JSONObject) json_response.get("iss_position");
-        this.latitude = position.getFloat("latitude");
-        this.longitude = position.getFloat("longitude");
+        this.latitude = json_response.getFloat("latitude");
+        this.longitude = json_response.getFloat("longitude");
+        this.altitude = json_response.getFloat("altitude");
+        this.velocity = json_response.getFloat("velocity");
         this.time = json_response.getInt("timestamp");
     }
 }

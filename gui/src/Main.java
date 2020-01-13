@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
-import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
@@ -15,7 +14,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -24,9 +22,12 @@ import javafx.scene.web.WebView;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+
 import netscape.javascript.JSObject;
 
+import java.awt.*;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 
@@ -35,8 +36,10 @@ public class Main extends Application {
     private JSObject javascriptConnector;
 
     //TODO Tu będą wszystkie wartości ustawień, domyślnie zczytywane z pliku przy uruchomieniu aplikacji
-    private int windowHeight = 720;
-    private int windowWidth = 1280;
+    private int windowHeight = 1080;
+    private int windowWidth = 1920;
+
+    private boolean fullscreen = true;
 
     Stage stage;
     Scene menu,loading,map,issLiveView,settings;
@@ -54,6 +57,7 @@ public class Main extends Application {
         stage = new Stage();
         stage.setWidth(windowWidth);
         stage.setHeight(windowHeight);
+        stage.setFullScreenExitHint("");
 
         loading = new Scene(getLoadingLayout());
         menu = new Scene(getMenuLayout());
@@ -64,16 +68,15 @@ public class Main extends Application {
 
 
         PauseTransition timer = new PauseTransition(Duration.millis(1500));
-        timer.setOnFinished(actionEvent -> stage.setScene(menu));
+        timer.setOnFinished(actionEvent -> setScene(menu));
 
 
         // Tu następuje pojawienie się aplikacji
-        stage.setScene(loading);
+        setScene(loading);
+        stage.setMaximized(fullscreen);
+        stage.setResizable(false);
         stage.show();
         timer.play();
-
-
-
     }
 
 
@@ -107,9 +110,11 @@ public class Main extends Application {
         ComboBox<String> resolutionComboBox = new ComboBox<>();
         resolutionComboBox.getItems().addAll(
                 "1920x1080",
-                "1280x720",
-                "720x576",
-                "720x480"
+                "1680x1050",
+                "1600x1200",
+                "1440x960",
+                "1400x1050",
+                "1280x720"
         );
         resolutionComboBox.getSelectionModel().selectFirst();
 
@@ -120,21 +125,42 @@ public class Main extends Application {
         );
         themeComboBox.getSelectionModel().selectFirst();
         Button btnViewSourceCode = new Button("Source Code");
+        btnViewSourceCode.setOnAction(actionEvent -> {
+            try {
+                Desktop.getDesktop().browse(new URL("https://github.com/GiveMeMoreData/ZPOIF-projekt-2019-Wizualizacja-pozycji-ISS").toURI());
+            } catch (IOException | URISyntaxException e) {
+                e.printStackTrace();
+            }
+        });
+
+        CheckBox fullscreenCheckBox = new CheckBox();
 
 
+        //Zmiana ustawień
         btnAcceptChanges.setOnAction(actionEvent -> {
-            String[] values = resolutionComboBox.getValue().split("x");
-            setStageSize(Integer.parseInt(values[0]),Integer.parseInt(values[1]));
+
+            if( fullscreenCheckBox.isSelected()!=fullscreen){
+                fullscreen=fullscreenCheckBox.isSelected();
+                stage.setMaximized(fullscreen);
+
+            }
+            if (!fullscreen){
+                String[] values = resolutionComboBox.getValue().split("x");
+                setStageSize(Integer.parseInt(values[0]),Integer.parseInt(values[1]));
+
+            }
 
         });
 
-        settingsGeneralLabels.getChildren().addAll(new Label("Rozdzielczość"),new Label("Fullscreen"), new Label("Fullscreen\nborderless"),new Label("Theme"), new Label("View Source\nCode"));
-        settingsGeneralValues.getChildren().addAll(resolutionComboBox,new CheckBox(),new CheckBox(),themeComboBox,btnViewSourceCode);
+
+
+        settingsGeneralLabels.getChildren().addAll(new Label("Rozdzielczość"),new Label("Fullscreen"),new Label("Theme"), new Label("View Source\nCode"));
+        settingsGeneralValues.getChildren().addAll(resolutionComboBox,fullscreenCheckBox,themeComboBox,btnViewSourceCode);
 
         settingsViews.getChildren().addAll(btnSettingsGeneral,btnSettings2DMap,btnBack,btnAcceptChanges);
 
 
-        btnBack.setOnAction(actionEvent -> stage.setScene(menu));
+        btnBack.setOnAction(actionEvent -> setScene(menu));
 
         return layoutSettings;
 
@@ -151,13 +177,11 @@ public class Main extends Application {
         //https://www.youtube.com/embed/kL090M6qtXQ?controls=0&autoplay=1&fs=0&mute=1&iv_load_policy=3&rel=0&showinfo=0
         issWebView.getEngine().load("https://www.youtube.com/embed/kL090M6qtXQ?controls=0&autoplay=1&fs=0&mute=1&iv_load_policy=3&rel=0&showinfo=0");
         issWebView.setPrefSize(windowWidth,windowHeight);
+
         Button btnBack = new Button("Wróć");
-        btnBack.setOnAction(actionEvent -> stage.setScene(menu));
+        btnBack.setOnAction(actionEvent -> setScene(menu));
 
         layoutIssLive.getChildren().addAll(issWebView,btnBack);
-
-
-
         return layoutIssLive;
     }
 
@@ -180,7 +204,7 @@ public class Main extends Application {
 
         // Przejście do ustawień
         btnSettings.setOnAction(actionEvent -> {
-            stage.setScene(settings);
+            setScene(settings);
             settings.getStylesheets().add("styleSettings.css");
         });
 
@@ -198,6 +222,8 @@ public class Main extends Application {
         VBox layoutMap = new VBox();
         WebView webView = new WebView();
         final WebEngine webEngine = webView.getEngine();
+        webView.setPrefSize(5000,5000);
+        webEngine.executeScript("var width="+(windowWidth-20));
 
         Button btnBackMap = new Button("Wróć");
         layoutMap.getChildren().addAll(webView, btnBackMap);
@@ -218,24 +244,24 @@ public class Main extends Application {
                                 }
                                 String longtitude = Float.toString(api.longitude);
                                 String latitude = Float.toString(api.latitude);
-                                Platform.runLater(() -> javascriptConnector.call("updateISS", longtitude, latitude));
+                                String altitude = Float.toString(api.altitude);
+                                String velocity = Float.toString(api.velocity);
+                                Platform.runLater(() -> javascriptConnector.call("updateISS", longtitude, latitude, altitude, velocity));
                                 return null;
                             }
                         };
                     }
                 };
-                sv.setPeriod(Duration.seconds(5));
+                sv.setPeriod(Duration.seconds(1));
                 sv.start();
             }
         });
         URL url = this.getClass().getResource("webview.html");
         webEngine.load(url.toString());
 
-        btnBackMap.setOnAction(actionEvent -> stage.setScene(menu));
+        btnBackMap.setOnAction(actionEvent -> setScene(menu));
 
         return layoutMap;
-
-
     }
 
     private Parent getLoadingLayout() {
@@ -246,7 +272,7 @@ public class Main extends Application {
         layoutLoadingPage.setAlignment(Pos.CENTER);
         layoutLoadingPage.getChildren().add(imageView);
 
-        layoutLoadingPage.setOnMouseClicked(mouseEvent -> stage.setScene(menu));
+        layoutLoadingPage.setOnMouseClicked(mouseEvent -> setScene(menu));
         return layoutLoadingPage;
     }
 
@@ -266,6 +292,5 @@ public class Main extends Application {
         stage.setY((screenHeight-windowHeight)/2);
         stage.setX((screenWidth-windowWidth)/2);
     }
-
 
 }

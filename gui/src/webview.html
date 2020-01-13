@@ -28,20 +28,27 @@
 
 <body>
   <main>
-    <h1>ISS location map</h1>
-    <div class="container">
       <script src="https://d3js.org/d3.v4.js"></script>
       <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
       <script src="https://d3js.org/topojson.v2.min.js"></script>
       <script src="https://rawgit.com/mourner/suncalc/master/suncalc.js"></script>
       <script type="text/javascript">
+
+        // Przycisk i cofanie się klawiszem ESC
+        window.onkeypress = function(event) {
+          if (event.key === "Escape") {
+            //TODO cofnięcie do menu
+          }
+        }
+
+
         var jsConnector = {
           updateISS: function(longtitude, latitude) {
             var x = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[0]
             var y = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[1]
-            svg.select("#iss")
-              .attr('cx', x)
-              .attr('cy', y)
+            svg.select("#iss").transition().duration(1500)
+              .attr('x', x)
+              .attr('y', y)
           }
         };
 
@@ -192,14 +199,21 @@
           svg.selselectAll('#sun').insertBefore('#land')
         }
 
-        var width = 1100
-        var height = width / 2
+        //var width = 1900
+        var height = width/2
         var bgColorLeft = '#42448A'
         var bgColorRight = '#376281'
         var sunOpacity = 0.11
         var shadowOpacity = 0.2
 
-        var svg = d3.select("body").append("svg").attr("id", "mapa")
+        var svg = d3.select("body")
+                .append("svg")
+                .attr("id", "mapa")
+                .attr('width', width)
+                .attr('height', height)
+                .attr('viewBox', "0 0 " + width + " " + height)
+                .append('g')
+                .attr('class', 'everything');
         var defs = svg.append('defs');
 
         defs.append('linearGradient')
@@ -251,22 +265,14 @@
           .attr('stop-opacity', 0)
           .attr('stop-color', 'rgb(255, 255, 255)')
 
-        defs.append("filter")
-          .attr("id", "filter")
-          .attr('x', '0%')
-          .attr('y', '0%')
-          .attr("height", '100%')
-          .attr("width", '100%')
-          .append('feImage')
-          .attr("xlink:href", "iss.png")
-
-        svg.attr('width', width)
-          .attr('height', height)
-          .attr('viewBox', "0 0 " + width + " " + height)
-          .append('rect')
+        svg.append('rect')
           .attr('width', width)
           .attr('height', height)
           .attr('fill', "url(#gradient)")
+          .on('zoom', function() {
+            svg.attr("transform", d3.event.transform)
+          })
+          .append("g")
 
         xy = getSunPosition()
         svg.append('circle')
@@ -276,6 +282,7 @@
           .attr('r', 150)
           .attr('opacity', 1)
           .style("fill", "url(#radialGradient)")
+
 
         d3.json("map.json", function(error, world) {
           if (error) throw error;
@@ -298,13 +305,39 @@
           .attr('fill-opacity', shadowOpacity)
           .attr('d', path)
 
-        svg.append("circle")
-          .attr('id', 'iss')
-          .attr('cx', 20)
-          .attr('cy', 20)
-          .attr('r', 15)
-          .style("fill", "#ffcc00")
-          .attr('filter', 'url(#filter)')
+        d3.xml("space.svg",
+                function(error, documentFragment) {
+
+                  if (error) {console.log(error); return;}
+
+                  var svgNode = documentFragment
+                          .getElementsByTagName("svg")[0];
+                  //use plain Javascript to extract the node
+
+                  svg.node().appendChild(svgNode);
+                  //d3's selection.node() returns the DOM node, so we
+                  //can use plain Javascript to append content
+
+                  svg.select("svg")
+                          .attr('width',40)
+                          .attr('height',40)
+                          .attr('id','iss')
+
+
+                });
+
+
+        var zoom_handler = d3.zoom()
+                .scaleExtent([1, 1000])
+                .translateExtent([[0,0],[2*width, 2*height]])
+                .on("zoom", function() {
+                  svg.attr("transform", d3.event.transform);
+                });
+
+        zoom_handler(svg);
+        //Zoom functions
+
+
 
 
         // var width = 970
