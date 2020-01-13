@@ -1,56 +1,50 @@
 import org.json.JSONObject;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class Api {
 
-    private BufferedReader rawResponse;
-    private StringBuilder request;
-    private URL url;
+    URI uri;
+    private String response;
     public float latitude;
     public float longitude;
-    public  int time;
+    public int time;
+    public float altitude;
+    public float velocity;
+    HttpClient client;
+    HttpRequest request;
 
-    public Api() throws MalformedURLException {
-        this.url= new URL("http://api.open-notify.org/iss-now.json");
+
+    public Api() {
+        try {
+            this.uri= new URI("https://api.wheretheiss.at/v1/satellites/25544");
+        } catch (URISyntaxException e) {
+            System.out.println("Could not connect to API");
+        }
+        client = HttpClient.newHttpClient();
+
     }
 
-
-    public void requestGET() throws IOException {
-
-        // Sends new GET request to url
+    public void fetch() throws InterruptedException, IOException {
         sendNewRequest();
-
-        // Reading data from request
-        readRequest();
-
-        // Updates 3 values this api class returns
         updateValues();
     }
 
-    private void sendNewRequest() throws IOException {
-        this.url.getContent(); // sends new GET request
-        HttpURLConnection con = (HttpURLConnection) this.url.openConnection();
-        rawResponse = new BufferedReader(new InputStreamReader(con.getInputStream()));
-    }
-
-    private void readRequest() throws IOException {
-        String inputLine;
-        request = new StringBuilder();
-        while ((inputLine = rawResponse.readLine()) != null) {request.append(inputLine);}
-        rawResponse.close();
+    private void sendNewRequest() throws InterruptedException, IOException {
+        request = HttpRequest.newBuilder().uri(this.uri)
+                .GET().build();
+        this.response = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
     }
 
     private void updateValues(){
-        JSONObject json_response = new JSONObject(request.toString());
-        JSONObject position = (JSONObject) json_response.get("iss_position");
-
-        this.latitude = position.getFloat("latitude");
-        this.longitude = position.getFloat("longitude");
+        JSONObject json_response = new JSONObject(this.response);
+        this.latitude = json_response.getFloat("latitude");
+        this.longitude = json_response.getFloat("longitude");
+        this.altitude = json_response.getFloat("altitude");
+        this.velocity = json_response.getFloat("velocity");
         this.time = json_response.getInt("timestamp");
     }
 }

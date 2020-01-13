@@ -1,0 +1,17 @@
+
+@import
+url('https://fonts.googleapis.com/css?family=Raleway');
+
+.button{
+    -fx-font-size: 24pt;
+    -fx-fill: #444444;
+    -fx-font-family: "Raleway Medium";
+    -fx-cursor: hand;
+    -fx-background-color: #6fa4ba;
+    -fx-pref-width: 280;
+    -fx-pref-height: 90;
+}
+
+.button:hover{
+    -fx-background-color: #346ba3;
+}
