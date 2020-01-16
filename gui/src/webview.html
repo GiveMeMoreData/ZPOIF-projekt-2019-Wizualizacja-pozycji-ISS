@@ -43,12 +43,20 @@
 
 
         var jsConnector = {
-          updateISS: function(longtitude, latitude) {
+          updateISS: function(longtitude, latitude, altitude, velocity) {
             var x = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[0]
             var y = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[1]
             svg.select("#iss").transition().duration(1500)
               .attr('x', x)
-              .attr('y', y)
+              .attr('y', y);
+
+            // tooltip:
+          var formatter = d3.format(".2f");
+          svg.select('#iss').append('title')
+              .text('Długość geograficzna: ' + formatter(parseFloat(longtitude, 10)) +
+                    "\nSzerokość geograficzna: " + formatter(parseFloat(latitude, 10)) +
+                    "\nPułap: " + formatter(parseFloat(altitude, 10)) +
+                    "\nPrędkość: " + formatter(parseFloat(velocity, 10)));
           }
         };
 
@@ -321,7 +329,8 @@
                   svg.select("svg")
                           .attr('width',40)
                           .attr('height',40)
-                          .attr('id','iss')
+                          .attr('id','iss');
+
 
 
                 });
