@@ -12,6 +12,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
+  }
+
+  .vis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-direction: row;
   }
 
@@ -35,19 +42,17 @@
   }
 
   h1 {
-    order: 1;
-    /* padding: 60px 0 0; */
-    /* color: #239C9C; */
-    color: #fff
-  }
-
-  .container {
-    order: 2;
+    font-weight: normal;
+    padding: 30px 0 0;
+    font-size: 24px;
+    color: #239C9C;
+    color: #fff;
   }
 </style>
 
 <body>
-  <main>
+  <h1>ISS location map</h1>
+  <div, class='vis'>
     <script src="https://d3js.org/d3.v4.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
     <script src="https://d3js.org/topojson.v2.min.js"></script>
@@ -59,7 +64,6 @@
           //TODO cofnięcie do menu
         }
       }
-
 
       var jsConnector = {
         update: function(longtitude, latitude, altitude, velocity) {
@@ -91,15 +95,15 @@
               "\nSzerokość geograficzna: " + formatter(parseFloat(latitude, 10)) +
               "\nPrędkość: " + formatter(parseFloat(velocity, 10)) + " KM/H" +
               "\nPułap: " + formatter(parseFloat(altitude, 10)) + " KM");
-        // indicators:
-        d3.select('#bar1')
-        .transition().delay(700).duration(200)
-        .attr("y", y1(parseFloat(velocity, 10)))
-        .attr("height", height/2 - margin.top - margin.bottom - y1(parseFloat(velocity, 10)))
-        d3.select('#bar2')
-        .transition().delay(700).duration(200)
-        .attr("y", y2(parseFloat(altitude, 10)))
-        .attr("height", height/2 - margin.top - margin.bottom - y2(parseFloat(altitude, 10)))
+          // indicators:
+          d3.select('#bar1')
+            .transition().delay(700).duration(200)
+            .attr("y", y1(parseFloat(velocity, 10)))
+            .attr("height", height / 2 - margin.top - margin.bottom - y1(parseFloat(velocity, 10)))
+          d3.select('#bar2')
+            .transition().delay(700).duration(200)
+            .attr("y", y2(parseFloat(altitude, 10)))
+            .attr("height", height / 2 - margin.top - margin.bottom - y2(parseFloat(altitude, 10)))
         }
       };
 
@@ -257,7 +261,7 @@
       var sunOpacity = 0.11
       var shadowOpacity = 0.2
 
-      var svg = d3.select("body")
+      var svg = d3.select(".vis")
         .append("svg")
         .attr("id", "mapa")
         .attr('width', width)
@@ -419,7 +423,7 @@
         bottom: 20,
         left: 60
       }
-      var indicators = d3.select("body").append('g').attr('class', 'indicators')
+      var indicators = d3.select(".vis").append('g').attr('class', 'indicators')
 
       indicator1 = indicators.append("svg")
         .attr("id", "indicator1")
@@ -454,7 +458,7 @@
         .call(d3.axisBottom(x1))
 
       indicator1.append("rect")
-      .attr('id', 'bar1')
+        .attr('id', 'bar1')
         .attr("x", x1('Prędkość (KM/H)'))
         .attr("y", y1(27500))
         .attr("width", x1.bandwidth())
@@ -477,16 +481,15 @@
         .attr("transform", "translate(0," + (height / 2 - margin.bottom - margin.top) + ")")
         .call(d3.axisBottom(x2))
 
-        indicator2.append("rect")
-          .attr('id', 'bar2')
-          .attr("x", x2('Pułap (KM)'))
-          .attr("y", y2(320))
-          .attr("width", x2.bandwidth())
-          .attr("height", 0)
-          .attr("fill", "white")
+      indicator2.append("rect")
+        .attr('id', 'bar2')
+        .attr("x", x2('Pułap (KM)'))
+        .attr("y", y2(320))
+        .attr("width", x2.bandwidth())
+        .attr("height", 0)
+        .attr("fill", "white")
     </script>
     </div>
-  </main>
 </body>
 
 </html>
