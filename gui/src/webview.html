@@ -446,7 +446,7 @@
 
       var x1 = d3.scaleBand()
         .range([0, width * 0.1 - margin.right - margin.left])
-        .domain(['Prędkość'])
+        .domain(['Prędkość (KM/H)'])
         .padding(0.2);
       indicator1.append("g")
         .attr('class', 'axis')
@@ -455,7 +455,7 @@
 
       indicator1.append("rect")
       .attr('id', 'bar1')
-        .attr("x", x1('Prędkość'))
+        .attr("x", x1('Prędkość (KM/H)'))
         .attr("y", y1(27500))
         .attr("width", x1.bandwidth())
         .attr("height", 0)
@@ -470,7 +470,7 @@
 
       var x2 = d3.scaleBand()
         .range([0, width * 0.1 - margin.right - margin.left])
-        .domain(['Pułap'])
+        .domain(['Pułap (KM)'])
         .padding(0.2);
       indicator2.append("g")
         .attr('class', 'axis')
@@ -479,7 +479,7 @@
 
         indicator2.append("rect")
           .attr('id', 'bar2')
-          .attr("x", x2('Pułap'))
+          .attr("x", x2('Pułap (KM)'))
           .attr("y", y2(320))
           .attr("width", x2.bandwidth())
           .attr("height", 0)
