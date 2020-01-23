@@ -43,7 +43,7 @@
 
   h1 {
     font-weight: normal;
-    padding: 30px 0 0;
+    padding: 0 0 30px 0;
     font-size: 24px;
     color: #239C9C;
     color: #fff;
@@ -52,18 +52,12 @@
 
 <body>
   <h1>ISS location map</h1>
-  <div, class='vis'>
+  <div class='vis'>
     <script src="https://d3js.org/d3.v4.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
     <script src="https://d3js.org/topojson.v2.min.js"></script>
     <script src="https://rawgit.com/mourner/suncalc/master/suncalc.js"></script>
     <script type="text/javascript">
-      // Przycisk i cofanie się klawiszem ESC
-      window.onkeypress = function(event) {
-        if (event.key === "Escape") {
-          //TODO cofnięcie do menu
-        }
-      }
 
       var jsConnector = {
         update: function(longtitude, latitude, altitude, velocity) {
@@ -91,10 +85,10 @@
           // tooltip:
           var formatter = d3.format(".2f");
           svg.select('#tooltip')
-            .text('Długość geograficzna: ' + formatter(parseFloat(longtitude, 10)) +
-              "\nSzerokość geograficzna: " + formatter(parseFloat(latitude, 10)) +
-              "\nPrędkość: " + formatter(parseFloat(velocity, 10)) + " KM/H" +
-              "\nPułap: " + formatter(parseFloat(altitude, 10)) + " KM");
+            .text('Długość geograficzna: ' + formatter(parseFloat(longtitude, 10)) +"\u00BA"+
+              "\nSzerokość geograficzna: " + formatter(parseFloat(latitude, 10)) +"\u00BA"+
+              "\nPrędkość: " + formatter(parseFloat(velocity, 10)) + " km/h" +
+              "\nPułap: " + formatter(parseFloat(altitude, 10)) + " km");
           // indicators:
           d3.select('#bar1')
             .transition().delay(700).duration(200)
@@ -254,7 +248,7 @@
         svg.selselectAll('#sun').insertBefore('#land')
       }
 
-      var width = 1600
+      var width = 1700
       var height = width / 2
       var bgColorLeft = '#42448A'
       var bgColorRight = '#376281'

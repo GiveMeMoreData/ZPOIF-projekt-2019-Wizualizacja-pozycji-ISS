@@ -26,9 +26,12 @@ import javafx.util.Duration;
 import netscape.javascript.JSObject;
 
 import java.awt.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Properties;
 
 
 public class Main extends Application {
@@ -40,6 +43,7 @@ public class Main extends Application {
     private int windowWidth = 1920;
 
     private boolean fullscreen = true;
+    private String theme = "Light";
 
     Stage stage;
     Scene menu,loading,map,issLiveView,settings;
@@ -58,11 +62,15 @@ public class Main extends Application {
         stage.setWidth(windowWidth);
         stage.setHeight(windowHeight);
         stage.setFullScreenExitHint("");
+        stage.getIcons().add(new Image("icon.png"));
+
+        //Loading saved properties
+        readProperties();
 
         loading = new Scene(getLoadingLayout());
         menu = new Scene(getMenuLayout());
-        menu.getStylesheets().add("style.css"); //TODO Dodany tylko do menu, dobrze by było mieć globalny
         map = new Scene(getMapLayout());
+
         issLiveView = new Scene(getIssLiveViewLayout());
         settings = new Scene(getSettingsLayout());
 
@@ -72,7 +80,7 @@ public class Main extends Application {
 
 
         // Tu następuje pojawienie się aplikacji
-        setScene(loading);
+        stage.setScene(loading);
         stage.setMaximized(fullscreen);
         stage.setResizable(false);
         stage.show();
@@ -101,8 +109,6 @@ public class Main extends Application {
 
 
 
-        Button btnSettingsGeneral = new Button("Ogólne");
-        Button btnSettings2DMap = new Button("Mapa 2D");
         Button btnAcceptChanges = new Button("Akceptuj");
         Button btnBack = new Button("Wróć");
 
@@ -147,8 +153,10 @@ public class Main extends Application {
             if (!fullscreen){
                 String[] values = resolutionComboBox.getValue().split("x");
                 setStageSize(Integer.parseInt(values[0]),Integer.parseInt(values[1]));
-
             }
+
+            theme= themeComboBox.getValue();
+            setScene(settings);
 
         });
 
@@ -157,7 +165,7 @@ public class Main extends Application {
         settingsGeneralLabels.getChildren().addAll(new Label("Rozdzielczość"),new Label("Fullscreen"),new Label("Theme"), new Label("View Source\nCode"));
         settingsGeneralValues.getChildren().addAll(resolutionComboBox,fullscreenCheckBox,themeComboBox,btnViewSourceCode);
 
-        settingsViews.getChildren().addAll(btnSettingsGeneral,btnSettings2DMap,btnBack,btnAcceptChanges);
+        settingsViews.getChildren().addAll(btnBack,btnAcceptChanges);
 
 
         btnBack.setOnAction(actionEvent -> setScene(menu));
@@ -203,18 +211,47 @@ public class Main extends Application {
         btnIssLive.setOnAction(actionEvent -> setScene(issLiveView));
 
         // Przejście do ustawień
-        btnSettings.setOnAction(actionEvent -> {
-            setScene(settings);
-            settings.getStylesheets().add("styleSettings.css");
-        });
+        btnSettings.setOnAction(actionEvent -> setScene(settings));
 
         // Zamknięcie aplikacji
         btnExit.setOnAction(actionEvent -> {
+            saveProperties();
             Platform.exit();
             System.exit(0);
         });
 
         return layoutMenu;
+    }
+
+    private void readProperties(){
+        Properties prop = new Properties();
+
+        try {
+            prop.load(new FileInputStream("config.properties"));
+        } catch (IOException e) {
+            System.out.println("File seems to not exist");
+            e.printStackTrace();
+        }
+
+        fullscreen =  Boolean.parseBoolean(prop.getProperty("fullscreen"));
+        theme =prop.getProperty("theme");
+
+    }
+
+    private void saveProperties() {
+        Properties prop = new Properties();
+
+        try {
+            //set the properties value
+            prop.setProperty("fullscreen", String.valueOf(fullscreen));
+            prop.setProperty("theme", theme);
+
+            //save properties to project root folder
+            prop.store(new FileOutputStream("config.properties"), null);
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
     private Parent getMapLayout() {
@@ -223,10 +260,13 @@ public class Main extends Application {
         WebView webView = new WebView();
         final WebEngine webEngine = webView.getEngine();
         webView.setPrefSize(5000,5000);
-        webEngine.executeScript("var width="+(windowWidth-20));
+
 
         Button btnBackMap = new Button("Wróć");
         layoutMap.getChildren().addAll(webView, btnBackMap);
+
+        String background = "-fx-background-color: #1A233B;";
+        layoutMap.setStyle(background);
 
         webEngine.getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
             if (Worker.State.SUCCEEDED == newValue) {
@@ -258,6 +298,7 @@ public class Main extends Application {
         });
         URL url = this.getClass().getResource("webview.html");
         webEngine.load(url.toString());
+        webEngine.executeScript("var width="+(windowWidth-20));
 
         btnBackMap.setOnAction(actionEvent -> setScene(menu));
 
@@ -277,7 +318,13 @@ public class Main extends Application {
     }
 
     private void setScene(Scene scene){
-        //TODO Może się przydać przy bardziej rozbudowanych przejściach pomiędzy scenami
+
+        if (theme.equals("Light")){
+            scene.getStylesheets().setAll("lightTheme.css");
+        }
+        else if (theme.equals("Dark")){
+            scene.getStylesheets().setAll("darkTheme.css");
+        }
         stage.setScene(scene);
     }
 

@@ -1,11 +1,12 @@
 
 @import
 url('https://fonts.googleapis.com/css?family=Raleway');
-
-.button{
+.root{
+    -fx-font-family: "Helvetica";
     -fx-font-size: 24pt;
+}
+.button{
     -fx-fill: #444444;
-    -fx-font-family: "Raleway Medium";
     -fx-cursor: hand;
     -fx-background-color: #6fa4ba;
     -fx-pref-width: 280;

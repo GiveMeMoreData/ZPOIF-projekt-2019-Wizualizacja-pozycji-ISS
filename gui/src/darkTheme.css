@@ -1,0 +1,24 @@
+@import
+ url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
+.root{
+    -fx-background-color: #1A233B;
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 24pt;
+}
+.label{
+    -fx-text-fill: #aaa;
+}
+.button{
+    -fx-cursor: hand;
+    -fx-background-color: #425996;
+    -fx-pref-width: 280;
+    -fx-pref-height: 90;
+    -fx-text-fill: #d1d1d1;
+}
+
+.button:hover{
+    -fx-background-color: #2f3f6b;
+    -fx-text-fill: #aaa;
+
+}
