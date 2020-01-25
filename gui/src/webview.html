@@ -40,6 +40,21 @@
   .axis text {
     fill: white;
   }
+  div.tooltip {
+    position: absolute;
+    text-align: left;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-width: 300px;
+    height: 56px;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+  }
 
   h1 {
     font-weight: normal;
@@ -61,14 +76,20 @@
 
       var jsConnector = {
         update: function(longtitude, latitude, altitude, velocity) {
+          var parsedLongitude = parseFloat(longtitude, 10);
+          var parsedLatitude = parseFloat(latitude, 10);
           // iss:
-          var x = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[0]
-          var y = projection([parseFloat(longtitude, 10), parseFloat(latitude, 10)])[1]
+          var x = projection([parsedLongitude, parsedLatitude])[0]
+          var y = projection([parsedLongitude, parsedLatitude])[1]
           svg.selectAll(".loading").moveToFront()
           svg.select("#iss")
             .transition().duration(500)
             .attr('x', x)
             .attr('y', y);
+          d3.select('#mouse_catcher')
+                  .transition().duration(500)
+                  .attr('x', x)
+                  .attr('y', y);
           // loading:
           svg.selectAll('.loading')
             .transition().delay(700).duration(200)
@@ -84,12 +105,16 @@
             .attr('d', path)
           // tooltip:
           var formatter = d3.format(".2f");
-          svg.select('#tooltip')
-            .text('Długość geograficzna: ' + formatter(parseFloat(longtitude, 10)) +"\u00BA"+
-              "\nSzerokość geograficzna: " + formatter(parseFloat(latitude, 10)) +"\u00BA"+
-              "\nPrędkość: " + formatter(parseFloat(velocity, 10)) + " km/h" +
-              "\nPułap: " + formatter(parseFloat(altitude, 10)) + " km");
+          var str = "Długość geograficzna: ";
+          str += parsedLongitude >= 0 ? formatter(parsedLongitude) + "\u00BA" + " E" : formatter(-parsedLongitude) + "\u00BA" + " W";
+          str += '<br/>' + 'Szerokość geograficzna: ';
+          str += parsedLatitude >= 0 ? formatter(parsedLatitude) + "\u00BA" + " N" : formatter(-parsedLatitude) + "\u00BA" + " S";
+          str += "<br/>" + "Prędkość: " + formatter(parseFloat(velocity, 10)) + " km/h" +
+                  "<br/>" + "Pułap: " + formatter(parseFloat(altitude, 10)) + " km";
+          tooltip
+            .html(str);
           // indicators:
+
           d3.select('#bar1')
             .transition().delay(700).duration(200)
             .attr("y", y1(parseFloat(velocity, 10)))
@@ -371,6 +396,10 @@
         .attr('fill-opacity', shadowOpacity)
         .attr('d', path)
 
+      var tooltip = d3.select("body").append("div")
+              .attr("class", "tooltip")
+              .style("opacity", 0);
+
       d3.xml("space.svg",
         function(error, documentFragment) {
 
@@ -392,10 +421,35 @@
             .attr('height', 40)
             .attr('id', 'iss')
             .attr('x', -100)
-            .attr('y', -100)
-            .append('title')
-            .attr('id', 'tooltip')
+            .attr('y', -100);
+          svg.append('rect')
+                  .attr('id', 'mouse_catcher')
+                  .attr('x', -100)
+                  .attr('y', -100)
+                  .attr('height', 40)
+                  .attr('width', 40)
+                  .attr('opacity', 0)
+            .on("mouseover", function() {
+              tooltip.transition()
+                 .duration(200)
+                 .style("opacity", .9)
+                 .style("left", (d3.event.pageX) + 10 + "px")
+                 .style("top", (d3.event.pageY) + 10 + "px");
+
+             })
+            .on('mousemove', function(){
+              tooltip.style('left', (d3.event.pageX) + 10 + "px")
+                 .style('top', (d3.event.pageY) + 10 + "px")
+                  })
+            .on("mouseout", function() {
+                    tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                  });
+
         });
+
+
 
 
       var zoom_handler = d3.zoom()
@@ -413,6 +467,12 @@
           d3.select('#iss')
                   .attr('width', width0 / k)
                   .attr('height', height0 / k);
+
+          d3.select('#mouse_catcher')
+                  .attr('width', width0 / k)
+                  .attr('height', height0 / k);
+
+
           //Now we scale the rest
           svg.attr("transform", d3.event.transform);
         });
