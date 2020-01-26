@@ -18,21 +18,45 @@ import java.io.File;
 import java.io.IOException;
 
 public class Predict {
-    String[] latitudes;
-    String[] longitudes;
+    private TLEPropagator propagator;
+    public double[] latitudes;
+    public double[] longitudes;
+    private OneAxisEllipsoid earth;
+    private TLEApi api;
+    private TimeScale utc;
+    private double duration = 3600;
+    private double stepT = 60;
+    private int predictionsAmount = (int) (duration / stepT);
+    private Frame frameOfReference;
+    private int counter;
+    private int maxCounter = 60;
+
 
     public Predict(){
+        this.counter = maxCounter;
         File orekitData = new File("predict/orekit-data-master");
         DataProvidersManager manager = DataProvidersManager.getInstance();
         manager.addProvider(new DirectoryCrawler(orekitData));
 
-        Frame frameOfReference = FramesFactory.getITRF(IERSConventions.IERS_2010, true);
-        TimeScale utc = TimeScalesFactory.getUTC();
+        this.frameOfReference = FramesFactory.getITRF(IERSConventions.IERS_2010, true);
+        this.utc = TimeScalesFactory.getUTC();
 
+        this.api = new TLEApi();
+
+        this.earth = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+                Constants.WGS84_EARTH_FLATTENING,
+                frameOfReference);
+
+
+    }
+    public void fetch(){
+        updateValues();
+    }
+
+    private void updateValues(){
+        if(counter < maxCounter){return;}
+        this.counter = 0;
         AbsoluteDate initialDate = new AbsoluteDate(String.valueOf(java.time.Clock.systemUTC().instant()), utc);
-
-        TLEApi api = new TLEApi();
-
         try {
             api.fetch();
         } catch (IOException | InterruptedException e) {
@@ -41,23 +65,14 @@ public class Predict {
         String line1 = api.line1;
         String line2 = api.line2;
 
-        System.out.println(line1);
-        System.out.println(line2);
+        //System.out.println(line1);
+        //System.out.println(line2);
         TLE tle = new TLE(line1, line2);
-
-        TLEPropagator propagator = TLEPropagator.selectExtrapolator(tle);
+        this.propagator = TLEPropagator.selectExtrapolator(tle);
         propagator.setSlaveMode();
-
-        OneAxisEllipsoid earth = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
-                Constants.WGS84_EARTH_FLATTENING,
-                frameOfReference);
-
-        double duration = 3600;
         AbsoluteDate finalDate = initialDate.shiftedBy(duration);
-        double stepT = 60;
-        int n = (int) (duration / stepT);
-        this.latitudes = new String[n + 1];
-        this.longitudes = new String[n + 1];
+        this.latitudes = new double[predictionsAmount + 1];
+        this.longitudes = new double[predictionsAmount + 1];
         int cpt = 0;
         for (AbsoluteDate extrapDate = initialDate;
              extrapDate.compareTo(finalDate) <= 0;
@@ -65,12 +80,11 @@ public class Predict {
             SpacecraftState currentState = propagator.propagate(extrapDate);
             Vector3D coordinates = currentState.getPVCoordinates(frameOfReference).getPosition();
             GeodeticPoint point = earth.transform(coordinates, frameOfReference, initialDate);
-            this.latitudes[cpt] = String.valueOf(point.getLatitude() / Math.PI * 180);
-            this.longitudes[cpt] = String.valueOf(point.getLongitude() / Math.PI * 180);
+            this.latitudes[cpt] = point.getLatitude() / Math.PI * 180;
+            this.longitudes[cpt] = point.getLongitude() / Math.PI * 180;
             cpt ++;
         }
 
     }
-
 
 }

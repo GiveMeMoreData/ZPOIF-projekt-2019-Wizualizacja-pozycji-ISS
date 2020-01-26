@@ -272,6 +272,11 @@ public class Main extends Application {
             if (Worker.State.SUCCEEDED == newValue) {
                 javascriptConnector = (JSObject) webEngine.executeScript("getJsConnector()");
                 Api api = new Api();
+                Predict predictor = new Predict();
+                predictor.fetch();
+                double[] predictedLongitudes = predictor.longitudes;
+                double[] predictedLatitudes = predictor.latitudes;
+                Platform.runLater(() -> javascriptConnector.call("updateLine", predictedLatitudes, predictedLongitudes));
                 ScheduledService<Void> sv = new ScheduledService<>() {
                     public Task<Void> createTask() {
                         return new Task<>() {
@@ -279,6 +284,7 @@ public class Main extends Application {
                             public Void call() {
                                 try {
                                     api.fetch();
+                                    //predictor.fetch();
                                 } catch (IOException | InterruptedException e) {
                                     System.out.println("IOException");
                                 }
