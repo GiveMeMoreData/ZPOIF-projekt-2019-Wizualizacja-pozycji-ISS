@@ -21,7 +21,7 @@ public class Predict {
     private TLEPropagator propagator;
     public double[] latitudes;
     public double[] longitudes;
-    public String[] dates;
+    //public String[] dates;
     private OneAxisEllipsoid earth;
     private TLEApi api;
     private TimeScale utc;
@@ -83,7 +83,7 @@ public class Predict {
         AbsoluteDate finalDate = initialDate.shiftedBy(duration);
         this.latitudes = new double[predictionsAmount + 1];
         this.longitudes = new double[predictionsAmount + 1];
-        this.dates = new String[predictionsAmount + 1];
+        //this.dates = new String[predictionsAmount + 1];
         int cpt = 0;
         for (AbsoluteDate extrapDate = initialDate;
              extrapDate.compareTo(finalDate) <= 0;
@@ -98,7 +98,7 @@ public class Predict {
             GeodeticPoint point = earth.transform(coordinates, frameOfReference, initialDate);
             this.latitudes[cpt] = point.getLatitude() / Math.PI * 180;
             this.longitudes[cpt] = point.getLongitude() / Math.PI * 180;
-            this.dates[cpt] = extrapDate.toString();
+            //this.dates[cpt] = extrapDate.toString();
             cpt ++;
         }
 

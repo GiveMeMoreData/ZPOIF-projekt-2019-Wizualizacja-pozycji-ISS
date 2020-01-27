@@ -130,12 +130,11 @@
             .attr("height", height / 2 - margin.top - margin.bottom - y2(parseFloat(altitude, 10)))
 
         },
-        updateLine: function (predictedLatitudes, predictedLongitudes, dates) {
+        updateLine: function (predictedLatitudes, predictedLongitudes) {
           //iss line:
           var lineData = d3.range(predictedLatitudes.length).map(function(i){
             return {x : projection([predictedLongitudes[i], predictedLatitudes[i]])[0],
-              y : projection([predictedLongitudes[i], predictedLatitudes[i]])[1],
-            date: dates[i]}
+              y : projection([predictedLongitudes[i], predictedLatitudes[i]])[1]}
           });
           var sliceIndex = lineData.map(function(d){return d.x}).indexOf(d3.min(lineData.map(function(d){return d.x})));
           var lineData1 = lineData.slice(0,sliceIndex);

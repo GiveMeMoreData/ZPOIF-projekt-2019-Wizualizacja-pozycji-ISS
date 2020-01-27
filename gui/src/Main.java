@@ -276,8 +276,8 @@ public class Main extends Application {
                 predictor.fetch();
                 double[] predictedLongitudes = predictor.longitudes;
                 double[] predictedLatitudes = predictor.latitudes;
-                String[] dates = predictor.dates;
-                Platform.runLater(() -> javascriptConnector.call("updateLine", predictedLatitudes, predictedLongitudes, dates));
+                //String[] dates = predictor.dates;
+                Platform.runLater(() -> javascriptConnector.call("updateLine", predictedLatitudes, predictedLongitudes));
                 ScheduledService<Void> sv = new ScheduledService<>() {
                     public Task<Void> createTask() {
                         return new Task<>() {
