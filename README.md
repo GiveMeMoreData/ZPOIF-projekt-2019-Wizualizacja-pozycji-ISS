@@ -3,7 +3,8 @@ This respository containes Java application used to visualise location of Intern
 
 ## Features
 * Displaying live position of ISS on a zommable map
-* Providing ISS's velocity and altitude 
+* Providing ISS's velocity and altitude
+* Predicting ISS's trajectory for the next 1.5h
 * Scaling to users screen
 * Providing easy access to live view from ISS  
 
