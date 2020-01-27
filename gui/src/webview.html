@@ -58,7 +58,6 @@
   .issLine{
     fill: none;
     stroke: yellow;
-    stroke-width: 2px;
   }
 
   h1 {
@@ -131,20 +130,55 @@
             .attr("height", height / 2 - margin.top - margin.bottom - y2(parseFloat(altitude, 10)))
 
         },
-        updateLine: function (predictedLatitudes, predictedLongitudes) {
+        updateLine: function (predictedLatitudes, predictedLongitudes, dates) {
           //iss line:
           var lineData = d3.range(predictedLatitudes.length).map(function(i){
             return {x : projection([predictedLongitudes[i], predictedLatitudes[i]])[0],
-              y : projection([predictedLongitudes[i], predictedLatitudes[i]])[1]}
+              y : projection([predictedLongitudes[i], predictedLatitudes[i]])[1],
+            date: dates[i]}
           });
+          var sliceIndex = lineData.map(function(d){return d.x}).indexOf(d3.min(lineData.map(function(d){return d.x})));
+          var lineData1 = lineData.slice(0,sliceIndex);
+          var lineData2 = lineData.slice(sliceIndex);
+          if(sliceIndex < lineData.length) {
+            var extraPoint =  {x:lineData2[0].x,
+                           y:lineData2[0].y};
+            extraPoint.x += width;
+            lineData1.push(extraPoint);
+            extraPoint =  {x:lineData1[sliceIndex - 1].x,
+              y:lineData1[sliceIndex - 1].y};
+            extraPoint.x -= width;
+            lineData2.unshift(extraPoint);
 
-          svg.append("path")
-                  .datum(lineData)
+          }
+
+          d3.select('#issLines')
+                  .append("path")
+                  .datum(lineData1)
                   .attr('class', 'issLine')
-                  .attr("d", d3.line()
-                          .x(function(d) { return d.x })
-                          .y(function(d) { return d.y })
-                  )
+                  .attr('stroke-width', 2)
+                  .attr("d", lineFunction);
+          d3.select('#issLines')
+                  .append("path")
+                  .datum(lineData2)
+                  .attr('class', 'issLine')
+                  .attr('stroke-width', 2)
+                  .attr("d", lineFunction);
+          var rotationData = lineData2.length >= 4 ? [lineData[lineData.length - 4],lineData[lineData.length - 1]] :
+                                                    [lineData1[lineData1.length - 4], lineData1[lineData1/length - 1]];
+          var rotationAngle = Math.atan((rotationData[1].y - rotationData[0].y) /
+                  (rotationData[1].x - rotationData[0].x)) / Math.PI * 180;
+          d3.select('#issLines')
+                  .append('text')
+                  .attr('x', rotationData[1].x)
+                  .attr('y', rotationData[1].y)
+                  .attr('text-anchor', 'end')
+                  .text("+ 1.5h ->")
+                  .attr('fill', 'yellow')
+                  .attr('font-size', 12)
+                  .attr('font-weight', 'bold')
+                  .attr('transform', 'rotate(' + rotationAngle + ', ' + rotationData[1].x + ', ' + (rotationData[1].y) + ')' +
+                  'translate(0 -4)')
 
         }
       };
@@ -296,11 +330,6 @@
         svg.selselectAll('#sun').insertBefore('#land')
       }
 
-      var linearFunction = d3.line()
-              .x(function(d) { return d.x; })
-              .y(function(d) { return d.y; })
-              .curve(d3.curveLinear);
-
       var width = 1000
       var height = width / 2
       var bgColorLeft = '#42448A'
@@ -413,6 +442,7 @@
           .attr('d', worldPath)
         svg.selectAll("#sun").moveToFront()
         svg.selectAll("#nightPath").moveToFront()
+        svg.select('#issLines').moveToFront()
         svg.selectAll("#issContainer").moveToFront()
         svg.selectAll(".loading").moveToFront()
       })
@@ -424,8 +454,8 @@
         .attr('fill-opacity', shadowOpacity)
         .attr('d', path);
 
-      svg.append('path')
-              .attr('class', 'issLine')
+      svg.append('g')
+              .attr('id', 'issLines');
 
       var tooltip = d3.select("body").append("div")
               .attr("class", "tooltip")
