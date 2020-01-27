@@ -9,8 +9,6 @@ public class BaseApi extends Api{
     public float altitude;
     public float velocity;
 
-
-
     public BaseApi() {
         super();
         try {

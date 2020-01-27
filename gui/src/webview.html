@@ -158,14 +158,13 @@
               y:lineData1[sliceIndex - 1].y};
             extraPoint.x -= width;
             lineData2.unshift(extraPoint);
-
           }
 
           d3.select('#issLines')
                   .append("path")
                   .datum(lineData1)
                   .attr('class', 'issLine')
-                  .attr('stroke-width', 2)
+                  .attr('stroke-width', baseLineStrokeWidth)
                   .attr("d", lineFunction);
           d3.select('#issLines')
                   .append("path")
