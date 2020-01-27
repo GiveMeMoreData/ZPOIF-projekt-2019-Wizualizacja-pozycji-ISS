@@ -34,20 +34,25 @@ public class Predict {
 
 
     public Predict(){
+        // Counter miał zadbać o to, by metoda nie odpalała się za często. Teraz odpala się tylko raz, więc deprecated
         this.counter = maxCounter;
+
+        // Ładujemy ustawienia orekit
         File orekitData = new File("predict/orekit-data-master");
         DataProvidersManager manager = DataProvidersManager.getInstance();
         manager.addProvider(new DirectoryCrawler(orekitData));
 
+        // Ustalamy układ odniesienia. W poniższym ziemia się nie porusza (u-d się kręci razem z nią).
         this.frameOfReference = FramesFactory.getITRF(IERSConventions.IERS_2010, true);
+        // Standard czasowy
         this.utc = TimeScalesFactory.getUTC();
 
         this.api = new TLEApi();
 
+        // Model powierzchni ziemi do odczytywania współrzędnych geograficznych
         this.earth = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                 Constants.WGS84_EARTH_FLATTENING,
                 frameOfReference);
-
 
     }
     public void fetch(){
@@ -57,20 +62,24 @@ public class Predict {
     private void updateValues(){
         if(counter < maxCounter){return;}
         this.counter = 0;
+
+        // Ustawiamy datę rozpoczęcia predykcji na obecną
         AbsoluteDate initialDate = new AbsoluteDate(String.valueOf(java.time.Clock.systemUTC().instant()), utc);
         try {
             api.fetch();
         } catch (IOException | InterruptedException e) {
             System.out.println("IOException");
         }
+        // Pobieramy aktualne dane o ISS w standardzie TLE (Two Line Format)
         String line1 = api.line1;
         String line2 = api.line2;
-
-        //System.out.println(line1);
-        //System.out.println(line2);
         TLE tle = new TLE(line1, line2);
+
+        // Konstruujemy propagator - przewidywacz. Najważniejszy element w całym kodzie
         this.propagator = TLEPropagator.selectExtrapolator(tle);
         propagator.setSlaveMode();
+
+        // Ustalamy koniec predykcji
         AbsoluteDate finalDate = initialDate.shiftedBy(duration);
         this.latitudes = new double[predictionsAmount + 1];
         this.longitudes = new double[predictionsAmount + 1];
@@ -79,8 +88,13 @@ public class Predict {
         for (AbsoluteDate extrapDate = initialDate;
              extrapDate.compareTo(finalDate) <= 0;
              extrapDate = extrapDate.shiftedBy(stepT))  {
+            // Odczytujemy przewidywany stan ISS w danym czasie
             SpacecraftState currentState = propagator.propagate(extrapDate);
+
+            // Wyciągamy pozycję w współrzędnych kartezjańskich względem środka Ziemi
             Vector3D coordinates = currentState.getPVCoordinates(frameOfReference).getPosition();
+
+            // Mapujemy współrzędne kartezjańskie na geograficzne za pomocą modelu Ziemi
             GeodeticPoint point = earth.transform(coordinates, frameOfReference, initialDate);
             this.latitudes[cpt] = point.getLatitude() / Math.PI * 180;
             this.longitudes[cpt] = point.getLongitude() / Math.PI * 180;
