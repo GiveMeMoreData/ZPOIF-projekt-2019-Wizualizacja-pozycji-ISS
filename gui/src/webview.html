@@ -162,7 +162,7 @@
                   .append("path")
                   .datum(lineData2)
                   .attr('class', 'issLine')
-                  .attr('stroke-width', 2)
+                  .attr('stroke-width', baseLineStrokeWidth)
                   .attr("d", lineFunction);
           var rotationData = lineData2.length >= 4 ? [lineData[lineData.length - 4],lineData[lineData.length - 1]] :
                                                     [lineData1[lineData1.length - 4], lineData1[lineData1/length - 1]];
@@ -170,12 +170,13 @@
                   (rotationData[1].x - rotationData[0].x)) / Math.PI * 180;
           d3.select('#issLines')
                   .append('text')
+                  .attr('id', 'issLineText')
                   .attr('x', rotationData[1].x)
                   .attr('y', rotationData[1].y)
                   .attr('text-anchor', 'end')
                   .text("+ 1.5h ->")
                   .attr('fill', 'yellow')
-                  .attr('font-size', 12)
+                  .attr('font-size', baseTextFontSize)
                   .attr('font-weight', 'bold')
                   .attr('transform', 'rotate(' + rotationAngle + ', ' + rotationData[1].x + ', ' + (rotationData[1].y) + ')' +
                   'translate(0 -4)')
@@ -457,6 +458,9 @@
       svg.append('g')
               .attr('id', 'issLines');
 
+      var baseTextFontSize = 12;
+      var baseLineStrokeWidth = 2;
+
       var tooltip = d3.select("body").append("div")
               .attr("class", "tooltip")
               .style("opacity", 0);
@@ -542,6 +546,11 @@
           d3.select('#issContainer')
                   .attr('transform', 'translate(' + (-issBaseWidth / k / 2) + ', '+ (-issBaseHeight / k / 2) + ')')
 
+          d3.selectAll('.issLine')
+                  .attr('stroke-width', baseLineStrokeWidth / k);
+
+          d3.select('#issLineText')
+                  .attr('font-size', baseTextFontSize / k);
 
           //Now we scale the rest
           svg.attr("transform", d3.event.transform);
