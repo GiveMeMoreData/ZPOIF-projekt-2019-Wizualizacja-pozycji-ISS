@@ -3,7 +3,7 @@
 
 .root{
     -fx-background-color: #1A233B;
-    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-family: "Roboto";
     -fx-font-size: 24pt;
 }
 .label{
@@ -11,14 +11,15 @@
 }
 .button{
     -fx-cursor: hand;
-    -fx-background-color: #425996;
+    -fx-background-color: #175676;
     -fx-pref-width: 280;
     -fx-pref-height: 90;
+    -fx-background-radius: 60;
     -fx-text-fill: #d1d1d1;
 }
 
 .button:hover{
-    -fx-background-color: #2f3f6b;
+    -fx-background-color: #094074;
     -fx-text-fill: #aaa;
 
 }

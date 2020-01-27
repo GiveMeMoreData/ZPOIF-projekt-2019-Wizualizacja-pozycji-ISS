@@ -74,20 +74,30 @@
     <script src="https://rawgit.com/mourner/suncalc/master/suncalc.js"></script>
     <script type="text/javascript">
 
+      var width = window.width;
+      var height = width / 2;
+      var bgColorLeft = "#42448A";
+      var bgColorRight = '#376281';
+      var sunOpacity = 0.11;
+      var shadowOpacity = 0.2;
+
+      projection = d3.geoEquirectangular().scale(width / 6.25).translate([width / 2, height / 2]).precision(0.1)
+      worldPath = d3.geoPath(projection)
+
       var jsConnector = {
         update: function(longtitude, latitude, altitude, velocity) {
           var parsedLongitude = parseFloat(longtitude, 10);
           var parsedLatitude = parseFloat(latitude, 10);
           // iss:
-          var x = projection([parsedLongitude, parsedLatitude])[0]
-          var y = projection([parsedLongitude, parsedLatitude])[1]
+          var x = projection([parsedLongitude, parsedLatitude])[0];
+          var y = projection([parsedLongitude, parsedLatitude])[1];
           svg.selectAll(".loading").moveToFront()
           svg.select("#iss")
-            .transition().duration(500)
+            .transition().duration(700)
             .attr('x', x)
             .attr('y', y);
           d3.select('#mouse_catcher')
-                  .transition().duration(500)
+                  .transition().duration(700)
                   .attr('x', x)
                   .attr('y', y);
 
@@ -274,12 +284,8 @@
         svg.selselectAll('#sun').insertBefore('#land')
       }
 
-      var width = 1700
-      var height = width / 2
-      var bgColorLeft = '#42448A'
-      var bgColorRight = '#376281'
-      var sunOpacity = 0.11
-      var shadowOpacity = 0.2
+
+
 
       var svG = d3.select(".vis")
         .append("svg")
@@ -377,8 +383,7 @@
 
       d3.json("map.json", function(error, world) {
         if (error) throw error;
-        projection = d3.geoEquirectangular().scale(width / 6.25).translate([width / 2, height / 2]).precision(0.1)
-        worldPath = d3.geoPath(projection)
+
         svg.append("path")
           .attr('id', 'land')
           .attr('fill', 'url(#landGradient)')
@@ -386,7 +391,7 @@
           .attr('d', worldPath)
         svg.selectAll("#sun").moveToFront()
         svg.selectAll("#nightPath").moveToFront()
-        svg.selectAll("#issContainer").moveToFront()
+        issContainer.moveToFront();
         svg.selectAll(".loading").moveToFront()
       })
 
@@ -401,8 +406,8 @@
               .attr("class", "tooltip")
               .style("opacity", 0);
 
-      var issBaseWidth = 40;
-      var issBaseHeight = 40;
+      var issBaseWidth = 60;
+      var issBaseHeight = 60;
 
       var issContainer = svg.append('g')
               .attr('id', 'issContainer')
@@ -434,8 +439,8 @@
                   .attr('id', 'mouse_catcher')
                   .attr('x', -100)
                   .attr('y', -100)
-                  .attr('height', 40)
-                  .attr('width', 40)
+                  .attr('height', issBaseHeight)
+                  .attr('width', issBaseWidth)
                   .attr('opacity', 0)
                   .attr('transform', 'translate(' + (-issBaseWidth / 2) + ', '+ (-issBaseHeight / 2) + ')')
             .on("mouseover", function() {
@@ -462,7 +467,7 @@
         .scaleExtent([1, 5])
         .translateExtent([
           [0, 0],
-          [1 * width, 1 * height]
+          [width, height]
         ])
         .on("zoom", function() {
           // First we catch the scale
@@ -479,7 +484,7 @@
                   .attr('height', issBaseHeight / k);
 
           d3.select('#issContainer')
-                  .attr('transform', 'translate(' + (-issBaseWidth / k / 2) + ', '+ (-issBaseHeight / k / 2) + ')')
+                  .attr('transform', 'translate(' + (-issBaseWidth / k / 2) + ', '+ (-issBaseHeight / k / 2) + ')');
 
 
           //Now we scale the rest

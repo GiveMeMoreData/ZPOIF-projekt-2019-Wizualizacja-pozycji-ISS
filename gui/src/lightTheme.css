@@ -1,16 +1,23 @@
-
 @import
-url('https://fonts.googleapis.com/css?family=Raleway');
+url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
 .root{
-    -fx-font-family: "Helvetica";
+    -fx-font-family: "Roboto";
     -fx-font-size: 24pt;
 }
+
+.label{
+    -fx-text-fill: #666;
+}
+
 .button{
-    -fx-fill: #444444;
     -fx-cursor: hand;
     -fx-background-color: #6fa4ba;
     -fx-pref-width: 280;
     -fx-pref-height: 90;
+    -fx-background-radius: 60;
+    -fx-text-fill: #fff;
+
 }
 
 .button:hover{

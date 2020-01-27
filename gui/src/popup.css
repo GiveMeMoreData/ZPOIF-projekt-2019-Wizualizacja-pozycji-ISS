@@ -1,0 +1,19 @@
+@import
+url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
+.root{
+    -fx-font-family: "Roboto";
+    -fx-font-size: 16pt;
+}
+.label{
+    -fx-text-fill: #333;
+    -fx-text-alignment: center;
+}
+
+.button{
+    -fx-cursor: hand;
+    -fx-pref-width: 200;
+    -fx-pref-height: 60;
+    -fx-background-radius: 30;
+    -fx-padding: 20;
+}
