@@ -278,21 +278,28 @@ public class Main extends Application {
         webEngine.getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
             if (Worker.State.SUCCEEDED == newValue) {
                 javascriptConnector = (JSObject) webEngine.executeScript("getJsConnector()");
-                Api api = new Api();
+                BaseApi baseApi = new BaseApi();
+                Predict predictor = new Predict();
+                predictor.fetch();
+                double[] predictedLongitudes = predictor.longitudes;
+                double[] predictedLatitudes = predictor.latitudes;
+                //String[] dates = predictor.dates;
+                Platform.runLater(() -> javascriptConnector.call("updateLine", predictedLatitudes, predictedLongitudes));
                 ScheduledService<Void> sv = new ScheduledService<>() {
                     public Task<Void> createTask() {
                         return new Task<>() {
 
                             public Void call() {
                                 try {
-                                    api.fetch();
+                                    baseApi.fetch();
+                                    //predictor.fetch();
                                 } catch (IOException | InterruptedException e) {
                                     System.out.println("IOException");
                                 }
-                                String longtitude = Float.toString(api.longitude);
-                                String latitude = Float.toString(api.latitude);
-                                String altitude = Float.toString(api.altitude);
-                                String velocity = Float.toString(api.velocity);
+                                String longtitude = Float.toString(baseApi.longitude);
+                                String latitude = Float.toString(baseApi.latitude);
+                                String altitude = Float.toString(baseApi.altitude);
+                                String velocity = Float.toString(baseApi.velocity);
                                 Platform.runLater(() -> javascriptConnector.call("update", longtitude, latitude, altitude, velocity));
                                 return null;
                             }
