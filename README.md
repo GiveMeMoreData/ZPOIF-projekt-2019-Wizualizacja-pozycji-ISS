@@ -13,7 +13,16 @@ This respository containes Java application used to visualise location of Intern
 * Mateusz Grzyb
 * Paweł Morgen 
 
-### Requirements: 
+## How to run?
+ * Download and install JavaFX 11 SDK from https://gluonhq.com/products/javafx/
+ * Open any Java IDE and create new project from version control
+ * Clone the respository using link: https://github.com/GiveMeMoreData/ZPOIF-projekt-2019-Wizualizacja-pozycji-ISS.git
+ * Just run gui/Main.java! 
+ 
+### Disclaimer
+Application is build in a way that it should only require an addition of JavaFX 11 SDK. But the process of building application varies depending on operating system and version of java, thus if any complications occur we strongly recommend following the intructions from terminal and if everything fails do not hassitate on contacting us directly or leaving an issue. We'll try to resolve any problem as quickly as possible :)
+
+## Requirements: 
  In current state different versions can cause problems:
   * Java JDK 11 
-  * Javafx SDK 11 
+  * JavaFX SDK 11 
