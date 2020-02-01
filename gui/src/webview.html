@@ -55,6 +55,10 @@
     border-radius: 8px;
     pointer-events: none;
   }
+  .issLine{
+    fill: none;
+    stroke: yellow;
+  }
 
   h1 {
     font-weight: normal;
@@ -134,6 +138,57 @@
             .transition().delay(700).duration(200)
             .attr("y", y2(parseFloat(altitude, 10)))
             .attr("height", height / 2 - margin.top - margin.bottom - y2(parseFloat(altitude, 10)))
+
+        },
+        updateLine: function (predictedLatitudes, predictedLongitudes) {
+          //iss line:
+          var lineData = d3.range(predictedLatitudes.length).map(function(i){
+            return {x : projection([predictedLongitudes[i], predictedLatitudes[i]])[0],
+              y : projection([predictedLongitudes[i], predictedLatitudes[i]])[1]}
+          });
+          var sliceIndex = lineData.map(function(d){return d.x}).indexOf(d3.min(lineData.map(function(d){return d.x})));
+          var lineData1 = lineData.slice(0,sliceIndex);
+          var lineData2 = lineData.slice(sliceIndex);
+          if(sliceIndex < lineData.length) {
+            var extraPoint =  {x:lineData2[0].x,
+                           y:lineData2[0].y};
+            extraPoint.x += width;
+            lineData1.push(extraPoint);
+            extraPoint =  {x:lineData1[sliceIndex - 1].x,
+              y:lineData1[sliceIndex - 1].y};
+            extraPoint.x -= width;
+            lineData2.unshift(extraPoint);
+          }
+
+          d3.select('#issLines')
+                  .append("path")
+                  .datum(lineData1)
+                  .attr('class', 'issLine')
+                  .attr('stroke-width', baseLineStrokeWidth)
+                  .attr("d", lineFunction);
+          d3.select('#issLines')
+                  .append("path")
+                  .datum(lineData2)
+                  .attr('class', 'issLine')
+                  .attr('stroke-width', baseLineStrokeWidth)
+                  .attr("d", lineFunction);
+          var rotationData = lineData2.length >= 4 ? [lineData[lineData.length - 4],lineData[lineData.length - 1]] :
+                                                    [lineData1[lineData1.length - 4], lineData1[lineData1/length - 1]];
+          var rotationAngle = Math.atan((rotationData[1].y - rotationData[0].y) /
+                  (rotationData[1].x - rotationData[0].x)) / Math.PI * 180;
+          d3.select('#issLines')
+                  .append('text')
+                  .attr('id', 'issLineText')
+                  .attr('x', rotationData[1].x)
+                  .attr('y', rotationData[1].y)
+                  .attr('text-anchor', 'end')
+                  .text("+ 1.5h ->")
+                  .attr('fill', 'yellow')
+                  .attr('font-size', baseTextFontSize)
+                  .attr('font-weight', 'bold')
+                  .attr('transform', 'rotate(' + rotationAngle + ', ' + rotationData[1].x + ', ' + (rotationData[1].y) + ')' +
+                  'translate(0 -4)')
+
         }
       };
 
@@ -284,9 +339,6 @@
         svg.selselectAll('#sun').insertBefore('#land')
       }
 
-
-
-
       var svG = d3.select(".vis")
         .append("svg")
         .attr("id", "mapa")
@@ -391,7 +443,8 @@
           .attr('d', worldPath)
         svg.selectAll("#sun").moveToFront()
         svg.selectAll("#nightPath").moveToFront()
-        issContainer.moveToFront();
+        svg.select('#issLines').moveToFront()
+        svg.selectAll("#issContainer").moveToFront()
         svg.selectAll(".loading").moveToFront()
       })
 
@@ -400,7 +453,13 @@
         .attr('id', 'nightPath')
         .attr('fill', "rgb(0,0,0)")
         .attr('fill-opacity', shadowOpacity)
-        .attr('d', path)
+        .attr('d', path);
+
+      svg.append('g')
+              .attr('id', 'issLines');
+
+      var baseTextFontSize = 12;
+      var baseLineStrokeWidth = 2;
 
       var tooltip = d3.select("body").append("div")
               .attr("class", "tooltip")
@@ -484,8 +543,13 @@
                   .attr('height', issBaseHeight / k);
 
           d3.select('#issContainer')
-                  .attr('transform', 'translate(' + (-issBaseWidth / k / 2) + ', '+ (-issBaseHeight / k / 2) + ')');
+                  .attr('transform', 'translate(' + (-issBaseWidth / k / 2) + ', '+ (-issBaseHeight / k / 2) + ')')
 
+          d3.selectAll('.issLine')
+                  .attr('stroke-width', baseLineStrokeWidth / k);
+
+          d3.select('#issLineText')
+                  .attr('font-size', baseTextFontSize / k);
 
           //Now we scale the rest
           svg.attr("transform", d3.event.transform);
